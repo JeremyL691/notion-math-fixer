@@ -13,12 +13,12 @@ and the audit should report the literal-TeX blocks, then convert them on `--appl
 
 ## Display math (`\[ ... \]`) — arrives as literal text
 
-课程的六个 primitives：
+The six primitives of the course:
 \[<br>\boxed{<br>\sigma,\ \pi,\ \rho,\ \times,\ \cup,\ -<br>}<br>\]
 
 ## Inline math (`\( ... \)`)
 
-记忆：\(\sigma\) 筛行，\(\pi\) 取列。
+Recall: \(\sigma\) filters rows, \(\pi\) picks columns.
 
 ## Escaped braces from markdown escaping
 
@@ -28,24 +28,24 @@ and the audit should report the literal-TeX blocks, then convert them on `--appl
 
 <table header-row="true">
 <tr>
-<td>操作</td>
-<td>符号</td>
-<td>考试直觉</td>
+<td>Operation</td>
+<td>Symbol</td>
+<td>Intuition</td>
 </tr>
 <tr>
 <td>Projection</td>
 <td>\(\pi_A(R)\)</td>
-<td>选 <strong>columns</strong></td>
+<td>picks <strong>columns</strong></td>
 </tr>
 <tr>
 <td>Theta Join</td>
 <td>\(R\bowtie_C S\)</td>
-<td>按条件连接</td>
+<td>join on a condition</td>
 </tr>
 <tr>
 <td>Difference</td>
 <td>\(R-S\)</td>
-<td>A 中有、B 中没有</td>
+<td>in A but not in B</td>
 </tr>
 </table>
 
@@ -55,8 +55,8 @@ Use \[ ... \] for display math and \( ... \) for inline math.
 
 ## A real line break inside a paragraph
 
-第一行
-第二行
+First line
+Second line
 
 ## Code and quotes survive untouched
 
@@ -69,4 +69,4 @@ INNER JOIN books AS b ON a.author_id = b.author_id;
 > Only one
 > no other
 
-最后：\[<br>R\bowtie_C S = \sigma_C(R\times S)<br>\]
+Finally:\[<br>R\bowtie_C S = \sigma_C(R\times S)<br>\]

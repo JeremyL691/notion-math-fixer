@@ -94,7 +94,7 @@ A test page with the constructs from [`examples/llm_note_sample.md`](examples/ll
 ```
 --- plan ---
   16 operation(s) on 11 block(s); every other block is left untouched
-    update paragraph: '记忆：\(\sigma\) 筛行，\(\pi\) 取列。' -> '记忆：$\sigma$ 筛行，$\pi$ 取列。'
+    update paragraph: 'Recall: \(\sigma\) filters rows, \(\pi\) picks columns.' -> 'Recall: $\sigma$ filters rows, $\pi$ picks columns.'
     insert replacing paragraph: equation
     trash  paragraph now empty: '\[<br>\boxed\{<br>\pi_A(\sigma_C(R))<br>\}<br>\]'
     insert native table (3 rows) from HTML

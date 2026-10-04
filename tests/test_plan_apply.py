@@ -9,7 +9,7 @@ import unittest
 from helpers import PAGE, B, FakeNotion, T, nmf, row
 
 HTML_TABLE = """<table header-row="true">
-<tr><td>操作</td><td>符号</td></tr>
+<tr><td>Operation</td><td>Symbol</td></tr>
 <tr><td>Projection</td><td>\\(\\pi_A(R)\\)</td></tr>
 <tr><td>Difference</td><td>\\(R-S\\)</td></tr>
 </table>"""
@@ -19,8 +19,8 @@ def sample() -> list[dict]:
     """examples/llm_note_sample.md as it lands in Notion, plus the shapes the old tool lost."""
     return [
         B("heading_2", T("Display math"), id="h-display"),
-        B("paragraph", T("课程的六个 primitives：\n\\[<br>\\boxed{<br>\\sigma,\\ \\pi,\\ \\rho<br>}<br>\\]"), id="p-lead"),
-        B("paragraph", T(r"记忆：\(\sigma\) 筛行，\(\pi\) 取列。"), id="p-inline"),
+        B("paragraph", T("The six primitives of the course:\n\\[<br>\\boxed{<br>\\sigma,\\ \\pi,\\ \\rho<br>}<br>\\]"), id="p-lead"),
+        B("paragraph", T(r"Recall: \(\sigma\) filters rows, \(\pi\) picks columns."), id="p-inline"),
         B("paragraph", T(r"\[<br>\boxed\{<br>\pi_A(\sigma_C(R))<br>\}<br>\]"), id="p-only-math"),
         B("paragraph", T(HTML_TABLE), id="p-html"),
         B("paragraph", T(r"Use \[ ... \] for display math and \( ... \) for inline math."), id="p-prose"),
@@ -36,7 +36,7 @@ def sample() -> list[dict]:
           children=[row([T("v")], [T(r"\(|v|\)")]), row([T("w")], [T("plain")])]),
         B("paragraph", T("costs $5 and $10"), id="p-dollars"),
         B("paragraph", T(r"code: "), T(r"\(x\)", code=True), id="p-code-run"),
-        B("paragraph", T("最后：\\[<br>R\\bowtie_C S = \\sigma_C(R\\times S)<br>\\]"), id="p-last"),
+        B("paragraph", T("Finally:\\[<br>R\\bowtie_C S = \\sigma_C(R\\times S)<br>\\]"), id="p-last"),
     ]
 
 

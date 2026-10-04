@@ -719,7 +719,7 @@ def restore(notion, journal_path: str) -> bool:
 
 # ------------------------------------------------------------------ verification
 
-TOKEN = re.compile(r"[0-9A-Za-z一-鿿]+")
+TOKEN = re.compile(r"[0-9A-Za-z\u4e00-\u9fff]+")
 
 
 def _texts(b: dict) -> list[list[dict]]:

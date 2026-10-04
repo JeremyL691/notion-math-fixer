@@ -17,10 +17,10 @@
   <!-- before -->
   <text class="label" x="32" y="36">BEFORE · PASTED FROM AN LLM</text>
   <rect class="card" x="24" y="50" width="370" height="196" rx="10"/>
-  <text class="text" x="44" y="84">课程的六个 primitives：</text>
+  <text class="text" x="44" y="84">The six primitives of the course:</text>
   <text class="raw" x="44" y="114">\[&lt;br&gt;\boxed{&lt;br&gt;\sigma,\ \pi,\ \rho&lt;br&gt;}</text>
   <text class="raw" x="44" y="136">&lt;br&gt;\]</text>
-  <text class="text" x="44" y="176">记忆：<tspan class="raw">\(\sigma\)</tspan> 筛行，<tspan class="raw">\(\pi\)</tspan> 取列。</text>
+  <text class="text" x="44" y="176">Recall: <tspan class="raw">\(\sigma\)</tspan> = rows, <tspan class="raw">\(\pi\)</tspan> = columns.</text>
   <text class="text" x="44" y="216">see <tspan fill="#2f7de1" text-decoration="underline">docs</tspan> for <tspan class="raw">\(a+b\)</tspan></text>
 
   <!-- arrow -->
@@ -30,10 +30,10 @@
   <!-- after -->
   <text class="label" x="488" y="36">AFTER · NATIVE NOTION EQUATIONS</text>
   <rect class="card" x="480" y="50" width="376" height="196" rx="10"/>
-  <text class="text" x="500" y="84">课程的六个 primitives：</text>
+  <text class="text" x="500" y="84">The six primitives of the course:</text>
   <rect class="eqblock" x="496" y="96" width="344" height="52" rx="4"/>
   <rect class="eqbox" x="610" y="104" width="116" height="36"/>
   <text class="math" x="668" y="129" text-anchor="middle">σ,  π,  ρ</text>
-  <text class="text" x="500" y="176">记忆：<tspan class="imath">σ</tspan> 筛行，<tspan class="imath">π</tspan> 取列。</text>
+  <text class="text" x="500" y="176">Recall: <tspan class="imath">σ</tspan> = rows, <tspan class="imath">π</tspan> = columns.</text>
   <text class="text" x="500" y="216">see <tspan fill="#2f7de1" text-decoration="underline">docs</tspan> for <tspan class="imath">a</tspan> + <tspan class="imath">b</tspan></text>
 </svg>

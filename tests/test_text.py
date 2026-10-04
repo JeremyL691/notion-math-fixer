@@ -56,7 +56,7 @@ class PageId(unittest.TestCase):
 
 class ConvertRuns(unittest.TestCase):
     def test_inline(self):
-        segs, changed, _ = convert(T(r"记忆：\(\sigma\) 筛行，\(\pi\) 取列。"))
+        segs, changed, _ = convert(T(r"Recall: \(\sigma\) filters rows, \(\pi\) picks columns."))
         self.assertTrue(changed)
         self.assertEqual(len(segs), 1)
         runs = segs[0][1]
@@ -90,19 +90,20 @@ class ConvertRuns(unittest.TestCase):
         self.assertFalse(changed)
         self.assertTrue(notes)
 
-    def test_long_cjk_lead_in_still_converts(self):
-        lead = "因此我们得到以下公式其中sigma表示选择操作pi表示投影操作这是关系代数的基础内容非常重要请务必记住它的定义和用法以及考试中的常见题型："
+    def test_long_lead_in_still_converts(self):
+        lead = ("So we get the following formula, where sigma is selection and pi is projection; "
+                "this is the core of relational algebra and shows up on every exam:")
         segs, changed, _ = convert(T(lead + r"\[ a+b \]"))
         self.assertTrue(changed)
         self.assertEqual(segs[1], ("display", "a+b"))
         self.assertEqual(segs[0][1][0]["text"]["content"], lead)
 
     def test_display_math_splits_segments(self):
-        segs, _, _ = convert(T("课程的六个 primitives：\n\\[<br>\\boxed{<br>\\sigma<br>}<br>\\]\n后记"))
+        segs, _, _ = convert(T("The six primitives of the course:\n\\[<br>\\boxed{<br>\\sigma<br>}<br>\\]\nThat's all."))
         self.assertEqual([k for k, _ in segs], ["runs", "display", "runs"])
         self.assertEqual(segs[1][1], "\\boxed{\n\\sigma\n}")
-        self.assertEqual(segs[0][1][0]["text"]["content"], "课程的六个 primitives：")
-        self.assertEqual(segs[2][1][0]["text"]["content"], "后记")
+        self.assertEqual(segs[0][1][0]["text"]["content"], "The six primitives of the course:")
+        self.assertEqual(segs[2][1][0]["text"]["content"], "That's all.")
 
     def test_display_in_cells_becomes_inline(self):
         segs, changed, _ = convert(T(r"\[ x \]"), allow_display=False)
@@ -110,9 +111,9 @@ class ConvertRuns(unittest.TestCase):
         self.assertEqual(segs, [("runs", [nmf.equation_run("x", T("")["annotations"])])])
 
     def test_br_in_prose_becomes_newline(self):
-        segs, changed, _ = convert(T("第一行<br>第二行"))
+        segs, changed, _ = convert(T("First line<br>Second line"))
         self.assertTrue(changed)
-        self.assertEqual(segs[0][1][0]["text"]["content"], "第一行\n第二行")
+        self.assertEqual(segs[0][1][0]["text"]["content"], "First line\nSecond line")
 
     def test_latex_linebreak_is_not_a_delimiter(self):
         segs, _, _ = convert(T(r"\[ a \\[2pt] b \]"))
@@ -129,8 +130,8 @@ class ConvertRuns(unittest.TestCase):
 
 class HtmlTable(unittest.TestCase):
     SRC = """<table header-row="true">
-<tr><td>操作</td><td>符号</td><td>说明</td></tr>
-<tr><td>Projection</td><td>\\(\\pi_A(R)\\)</td><td>选 <strong>columns</strong></td></tr>
+<tr><td>Operation</td><td>Symbol</td><td>Notes</td></tr>
+<tr><td>Projection</td><td>\\(\\pi_A(R)\\)</td><td>picks <strong>columns</strong></td></tr>
 <tr><td>Norm</td><td>\\(|v|\\)</td><td>a &amp; b<br>c</td></tr>
 </table>"""
 
