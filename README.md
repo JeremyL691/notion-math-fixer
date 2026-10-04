@@ -1,15 +1,20 @@
 # notion-math-fixer
 
-Turn **LLM-generated LaTeX into native Notion equation blocks** — through the official API, in one shot, with verification.
+[![tests](https://github.com/JeremyL691/notion-math-fixer/actions/workflows/tests.yml/badge.svg)](https://github.com/JeremyL691/notion-math-fixer/actions/workflows/tests.yml) ![python](https://img.shields.io/badge/python-3.9%2B-3776ab) ![dependencies](https://img.shields.io/badge/dependencies-stdlib%20only-brightgreen) [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
+Turn **LLM-generated LaTeX into native Notion equations** — through the official API, block by block, with an undo journal and verification.
+
+<p align="center"><img src="docs/before-after.svg" alt="Before: LaTeX pasted from an LLM stays plain text in Notion. After: native equation blocks and inline equations, with links intact." width="880"></p>
 
 ChatGPT, Claude, and most "export my chat" flows hand you `\[ ... \]`, `\( ... \)`, `<br>` tags, escaped braces and raw HTML tables. Paste that into Notion and the math stays **plain text**: you see `\[ \boxed{ \sigma, \ \pi } \]` instead of a formula. Manually re-typing every equation into `/math` blocks is not a workflow.
 
-This tool takes an existing Notion page, rebuilds it from its **block tree**, and writes it back with real equations — then proves it worked.
+This tool reads an existing Notion page's **block tree**, patches only the blocks that hold literal LaTeX, and proves it worked.
 
 ```
-$ python3 notion_math_fixer.py <page-id>            # audit only, nothing written
-$ python3 notion_math_fixer.py <page-id> --apply    # rebuild + verify
-$ python3 notion_math_fixer.py <page-id> --apply --katex   # + KaTeX validation
+$ python3 notion_math_fixer.py <page-id-or-url>                  # audit + plan, nothing written
+$ python3 notion_math_fixer.py <page-id-or-url> --apply          # write + verify
+$ python3 notion_math_fixer.py <page-id-or-url> --apply --katex  # + KaTeX gate before writing
+$ python3 notion_math_fixer.py --restore <run>.journal.jsonl     # undo a run
 ```
 
 ---
@@ -18,33 +23,51 @@ $ python3 notion_math_fixer.py <page-id> --apply --katex   # + KaTeX validation
 
 | Input (what LLMs actually emit) | Output (native Notion) |
 |---|---|
-| `\[ ... \]` (multi-line, with `<br>` inside) | **block equation** (`$$ ... $$`) |
-| `\( ... \)` | **inline equation** (`$ ... $`) — works in headings and table cells too |
-| `\{ x \}` when the braces are otherwise unbalanced | `{ x }` (escaping artifact removed) |
-| `<br>` inside math | newline inside the expression |
-| `<table><tr><td>` HTML | **native Notion table** (cells may contain equations) |
-| quote with nested paragraph children | preserved (a naive top-level walk drops them) |
-| paragraph with a real line break | kept as `<br>`, Notion's in-paragraph break |
+| `\[ ... \]` (multi-line, with `<br>` inside) | **equation block** — after a paragraph, or nested under a list item / quote / callout / toggle |
+| `\( ... \)` | **inline equation** — in paragraphs, headings, lists, quotes, callouts, toggles and table cells |
+| `\boxed\{ x \}`, `x_\{ij\}` (markdown-escaped argument braces) | `\boxed{ x }`, `x_{ij}` — set braces like `\{x \mid x>0\}` and `\left\{` are left alone |
+| `x\_1` | `x_1` — but `\text{user\_id}` keeps its (correct) escape |
+| `<br>` inside math / in prose | a newline inside the expression / in the paragraph |
+| `<table><tr><td>` HTML in one or several paragraphs | **native Notion table** (cells may contain equations, `<strong>`/`<em>`/`<code>` become formatting) |
+
+What it deliberately leaves alone: code blocks and `code`-formatted text, `$5`-style dollar signs, and prose *about* LaTeX (`use \[ ... \] for display math` — a span whose content is only `...` is documentation, not math).
+
+## How it works
+
+```
+GET block tree ──► plan ──► dry run: print every op (+ KaTeX gate)
+                     │
+                     └──► --apply: write ops one by one, journal each
+                              ├──► verify: re-read, re-plan must be empty
+                              └──► --restore <journal>: undo, last step first
+```
+
+| block holds… | operation |
+|---|---|
+| only inline math | `update` — patch that block's `rich_text` in place |
+| display math, in a list item / quote / callout / toggle | `update` + `insert` the equation as its first child |
+| display math, in a paragraph or heading | `update` + `insert` the equation after it (`trash` the block if nothing else is left) |
+| math in a table cell | `cells` — patch that row |
+| a literal `<table>…</table>` | `insert` a native table, `trash` the source paragraph(s) |
+| nothing to convert | nothing — it is never written |
 
 ## Safety model
 
-* **Dry run by default.** Writing requires `--apply`.
-* **Backup before every write** — original block tree, generated markdown, and the pre-write export go to `~/.cache/notion-math-fixer/`.
-* **Refuses to guess.** Block types it cannot express losslessly (callout, toggle, image, video, bookmark, …) abort the run; `--force` overrides.
-* **Verifies after writing** — it does not trust the `200 OK`:
+* **Dry run by default.** It prints every planned operation (`before → after`); writing requires `--apply`.
+* **Touches only what it must.** Inline math is fixed by patching that block's rich text in place, so links, colors, mentions, comments, children and block ids survive. Display math is inserted next to (or under) its block. Every other block is left byte-for-byte alone — callouts, toggles, images, columns, child pages included.
+* **Refuses to write on a race.** If the page was edited between planning and writing, it stops.
+* **KaTeX gate (`--katex`).** Every expression it is about to write is rendered with [KaTeX](https://katex.org) (`throwOnError`) *before* anything is written; one failure and nothing is written.
+* **Journaled and undoable.** Each completed step is appended to `~/.cache/notion-math-fixer/<page>_<time>.journal.jsonl`; `--restore` undoes a run (or a partial run that failed midway), last step first. The full original block tree (table rows included) is saved alongside.
+* **Verifies after writing** — it does not trust the `200 OK`. It re-reads the whole tree and re-plans it: a correct run leaves nothing left to convert.
 
 ```
 --- verification ---
-  blocks            : 11  {'paragraph': 4, 'equation': 2, 'table': 1, 'quote': 3, 'code': 1}
-  literal LaTeX left: 0   (must be 0)
-  equation blocks   : 2   (expected 2)
-  expressions match : 2/2
-  text drift tokens : 0   (code-fence language labels are expected)
-  RESULT            : PASS
-KaTeX: 2/2 expressions render cleanly
+  blocks              : 27  {'heading_2': 1, 'paragraph': 11, 'equation': 4, 'table': 2, 'table_row': 5, ...}
+  still convertible   : 0   (must be 0)
+  equations written   : 13   (planned 13)
+  text drift tokens   : 0
+  RESULT              : PASS
 ```
-
-`--katex` additionally renders every expression through [KaTeX](https://katex.org) with `throwOnError: true`, so a malformed formula fails the run instead of landing in your notes.
 
 ## Quickstart
 
@@ -58,43 +81,39 @@ export NOTION_TOKEN=ntn_xxx        # or --token-file ~/.notion_token
 python3 notion_math_fixer.py "https://www.notion.so/My-Page-<id>"           # look first
 python3 notion_math_fixer.py "https://www.notion.so/My-Page-<id>" --apply   # do it
 
-# optional KaTeX gate
-npm i katex && python3 notion_math_fixer.py <id> --apply --katex
+# optional KaTeX gate (needs node)
+npm ci && python3 notion_math_fixer.py <id> --apply --katex
 ```
 
-Requires Python 3.9+ (stdlib only) and Notion-Version `2025-09-03` or newer. `--notion-version` is overridable; `2026-03-11` also works.
+Requires Python 3.9+ (stdlib only) and Notion-Version `2025-09-03` or newer (`--notion-version` overrides; `2026-03-11` also works).
 
 ### A real run
 
-Before — four paragraphs whose math is literal text, an HTML table whose symbol column is literal text, and a quote with a nested child paragraph:
+A test page with the constructs from [`examples/llm_note_sample.md`](examples/llm_note_sample.md), plus a nested child paragraph, a list item with a child, a callout, a link next to math and a table cell holding `\(|v|\)`:
 
 ```
---- audit ---
-  top-level blocks    : 9  {'paragraph': 5, 'table': 1, 'quote': 2, 'code': 1}
-  blocks w/ literal TeX: 4
-      #0 'This note is what an LLM export usually looks like: \[ ... \] blocks, '
-      #2 '\[\n\boxed{\n\sigma,\ \pi,\ \rho\n}\n\]'
-      #3 '记忆：\(\sigma\) 筛行，\(\pi\) 取列。'
-      #8 '最后：\[\nR\bowtie_C S = \sigma_C(R\times S)\n\]'
-  nested (non-table)  : [(5, 'quote', 1)]
-
---- rebuild ---
-  394 chars | block equations 2 | inline equations 5
-    leftover '\[': 1 kept in 1 prose paragraph(s)
-    leftover '\(': 0 ok
-    leftover '<table': 0 ok
-    <br> inside math: 0 ok
+--- plan ---
+  16 operation(s) on 11 block(s); every other block is left untouched
+    update paragraph: '记忆：\(\sigma\) 筛行，\(\pi\) 取列。' -> '记忆：$\sigma$ 筛行，$\pi$ 取列。'
+    insert replacing paragraph: equation
+    trash  paragraph now empty: '\[<br>\boxed\{<br>\pi_A(\sigma_C(R))<br>\}<br>\]'
+    insert native table (3 rows) from HTML
+    update paragraph: 'see docs for \(a+b\)' -> 'see docs for $a+b$'
+    update bulleted_list_item: 'result:\[ a+b \]' -> 'result:'
+    insert nested under bulleted_list_item: equation
+    cells  table_row: v | $|v|$
+    ...
+  notes: {'unescaped argument braces \{ \}': 1, 'kept placeholder span as text (prose about math)': 2}
+  KaTeX: 13/13 expressions render cleanly
 ```
 
-After `--apply`: `literal LaTeX left: 0`, `equation blocks: 2 (expected 2)`, `expressions match: 2/2`, `RESULT: PASS`.
-
-Note the deliberate non-conversion: paragraph `#0` *talks about* `\[ ... \]`. The tool leaves it as text (prose, not math) and says so, instead of inventing equations out of documentation.
+After `--apply`: `RESULT: PASS`; a second dry run plans `0 operation(s)`; `--restore` brings the page back with identical content and order.
 
 ---
 
-## Five pitfalls this tool encodes
+## Pitfalls this tool encodes
 
-These are the reasons a naive "markdown → Notion" round trip silently destroys notes. All verified on 2026-10-02.
+These are the reasons a naive "markdown → Notion" round trip silently destroys notes. Verified against the live API in October 2026.
 
 ### 1. Notion's markdown export truncates some equations — never round-trip through it
 
@@ -107,39 +126,38 @@ These are the reasons a naive "markdown → Notion" round trip silently destroys
 | `\pi_{authors.name}` | complete | **truncated to `\pi_{`** |
 | `\boxed{\n\pi_{authorsname}\n...\n}` (no dot) | complete | complete |
 | `\boxed{\n\pi_{a.b}\n\left(x\n\right)\n}` (short) | complete | complete |
-| `\boxed{\n\text{some longer text ...}\n}` | complete | complete |
 
-No error, no flag — `truncated: false`, `unknown_block_ids: []`. Any tool that reads a page as markdown, transforms it, and writes it back will **permanently destroy** the affected equations. Full report + repro: [`docs/export-truncation.md`](docs/export-truncation.md).
+No error, no flag — `truncated: false`, `unknown_block_ids: []`. Full report + repro: [`docs/export-truncation.md`](docs/export-truncation.md). **So this tool reads `GET /v1/blocks/{id}/children` and never the export.**
 
-**So this tool rebuilds from `GET /v1/blocks/{id}/children`, and verifies against equation blocks — never against the export.**
+### 2. …and don't write back through markdown either
 
-### 2. Blocks nest — a top-level walk silently drops content
+An earlier version of this tool rebuilt the whole page as markdown and replaced it. That loses things no matter how careful the renderer is: links and colors (plain text only), `$5` becoming an equation, `\[` being eaten as a markdown escape, `|` in `$|x|$` splitting a table cell, children of blocks the renderer didn't know about. Patching rich text in place has none of these failure modes.
 
-A `quote` can own `paragraph` children. Walking only the top level loses them (we lost two keyword lists that way). The tool walks recursively and merges children back into their parent.
+### 3. Blocks nest — a top-level walk silently drops content
 
-### 3. `$$x$$` on one line is *not* an equation block
+A `quote` can own `paragraph` children, a paragraph can own indented children, a list item can own anything. The tree is walked recursively, table rows included. (Child pages and child databases are separate documents and are not descended into.)
 
-* `$$` on its own line, expression, `$$` on its own line → **equation block** ✅
-* `$$x$$` inline in one line → a paragraph containing an inline equation ❌ (looks close, behaves differently)
+### 4. Un-trashing a block does not put it back
 
-Same for inline: `$x$` in a heading or a table cell becomes a real inline equation.
-
-### 4. Pipe tables can hold equations in cells
-
-Notion's markdown tables are pipe tables (`| a | b |` + `| --- |`), and `$...$` inside a cell becomes an `equation` rich_text. That is how the HTML tables in LLM output get repaired.
-
-### 5. Line breaks inside a paragraph need `<br>`
-
-A raw newline inside a paragraph is not preserved; `<br>` is the documented in-paragraph break. The tool converts prose newlines to `<br>` (and strips `<br>` from inside math, where it belongs as a real newline).
+`DELETE /v1/blocks/{id}` moves a block to the trash, but restoring it (`in_trash: false`) appends it to the **end** of its parent — and the API has no "move block". So `--restore` re-creates trashed blocks right after the sibling that preceded them (they get new ids; nothing else does).
 
 ---
 
 ## Limits
 
-* Equations, tables, nesting, code, lists, quotes, headings, dividers, child pages. **Not** images, callouts, toggles, bookmarks — it refuses rather than degrading them.
-* It rebuilds the whole page (`replace_content`). Use it on notes you own; the backup is your undo.
 * One page per run. Batch by looping the CLI.
-* Notion rate-limits at ~3 req/s; the client retries 429/5xx with backoff.
+* A block is skipped (with a note, never half-written) if converting it would exceed Notion's limits — 100 rich-text segments per block, 1000 characters per expression — or if it contains a mention type the API cannot write back.
+* A synced block that mirrors another page is not edited.
+* Notion rate-limits at ~3 req/s; the client honours `Retry-After` on 429 and retries idempotent calls on 5xx/network errors.
+
+## Development
+
+```bash
+python3 -m unittest discover -s tests -v    # stdlib only, no network
+npm ci                                      # optional: enables the KaTeX gate tests
+```
+
+`tests/helpers.py` has an in-memory `FakeNotion` that mimics the block API (like Notion, it cannot move a trashed block back into place), so the planner, executor, journal and restore are exercised end to end offline.
 
 ## Prior art
 

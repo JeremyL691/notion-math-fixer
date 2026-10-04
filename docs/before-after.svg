@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 270" width="880" height="270" role="img" aria-label="Before: LaTeX pasted into Notion stays plain text. After notion-math-fixer: native equation blocks and inline equations.">
+  <style>
+    .bg { fill: #f6f5f2; }
+    .card { fill: #ffffff; stroke: #e3e2de; stroke-width: 1; }
+    .label { font: 600 12px -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #787774; letter-spacing: .06em; }
+    .text { font: 15px -apple-system, "Segoe UI", "PingFang SC", "Noto Sans CJK SC", Helvetica, Arial, sans-serif; fill: #37352f; }
+    .raw { font: 13.5px ui-monospace, "SF Mono", Menlo, Consolas, monospace; fill: #b4402f; }
+    .math { font: italic 19px "Latin Modern Math", "STIX Two Math", "Cambria Math", "Times New Roman", serif; fill: #37352f; }
+    .imath { font: italic 16px "Latin Modern Math", "STIX Two Math", "Cambria Math", "Times New Roman", serif; fill: #37352f; }
+    .eqbox { fill: none; stroke: #37352f; stroke-width: 1.1; }
+    .eqblock { fill: #f7f6f3; }
+    .arrow { stroke: #2f7de1; stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .tag { font: 600 11.5px ui-monospace, "SF Mono", Menlo, Consolas, monospace; fill: #2f7de1; }
+  </style>
+  <rect class="bg" width="880" height="270" rx="14"/>
+
+  <!-- before -->
+  <text class="label" x="32" y="36">BEFORE · PASTED FROM AN LLM</text>
+  <rect class="card" x="24" y="50" width="370" height="196" rx="10"/>
+  <text class="text" x="44" y="84">课程的六个 primitives：</text>
+  <text class="raw" x="44" y="114">\[&lt;br&gt;\boxed{&lt;br&gt;\sigma,\ \pi,\ \rho&lt;br&gt;}</text>
+  <text class="raw" x="44" y="136">&lt;br&gt;\]</text>
+  <text class="text" x="44" y="176">记忆：<tspan class="raw">\(\sigma\)</tspan> 筛行，<tspan class="raw">\(\pi\)</tspan> 取列。</text>
+  <text class="text" x="44" y="216">see <tspan fill="#2f7de1" text-decoration="underline">docs</tspan> for <tspan class="raw">\(a+b\)</tspan></text>
+
+  <!-- arrow -->
+  <path class="arrow" d="M410 148 H462 M450 136 L464 148 L450 160"/>
+  <text class="tag" x="437" y="124" text-anchor="middle">--apply</text>
+
+  <!-- after -->
+  <text class="label" x="488" y="36">AFTER · NATIVE NOTION EQUATIONS</text>
+  <rect class="card" x="480" y="50" width="376" height="196" rx="10"/>
+  <text class="text" x="500" y="84">课程的六个 primitives：</text>
+  <rect class="eqblock" x="496" y="96" width="344" height="52" rx="4"/>
+  <rect class="eqbox" x="610" y="104" width="116" height="36"/>
+  <text class="math" x="668" y="129" text-anchor="middle">σ,  π,  ρ</text>
+  <text class="text" x="500" y="176">记忆：<tspan class="imath">σ</tspan> 筛行，<tspan class="imath">π</tspan> 取列。</text>
+  <text class="text" x="500" y="216">see <tspan fill="#2f7de1" text-decoration="underline">docs</tspan> for <tspan class="imath">a</tspan> + <tspan class="imath">b</tspan></text>
+</svg>
